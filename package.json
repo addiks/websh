@@ -1,0 +1,31 @@
+{
+  "name": "shweb",
+  "version": "0.0.1",
+  "description": "Control an interactive browser session using shell commands (For end-to-end tests written in bash)",
+  "main": "ts/shweb.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "js",
+    "http",
+    "html",
+    "bash",
+    "end-to-end-test"
+  ],
+  "author": "Gerrit Addiks",
+  "license": "MIT",
+  "dependencies": {
+    "@types/express": "^5.0.3",
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^24.1.0",
+    "@types/yargs": "^17.0.33",
+    "express": "^5.1.0",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.8.3",
+    "yargs": "^18.0.0"
+  },
+  "devDependencies": {
+    "why-is-node-running": "^3.2.2"
+  }
+}
