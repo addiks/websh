@@ -2,21 +2,21 @@
 import express from 'express';
 import { Server } from 'net';
 
-import { ShWebBrowser } from './browser'
+import { WebShBrowser } from './browser'
 
-export interface ShWebServerEventReceiver {
+export interface WebShServerEventReceiver {
     close(): void;
 }
 
-export class ShWebServer {
+export class WebShServer {
     public readonly port: number;
     private express;
     private server: Server|null = null;
-    private eventReceiver: ShWebServerEventReceiver;
+    private eventReceiver: WebShServerEventReceiver;
 
     constructor (
-        eventReceiver: ShWebServerEventReceiver, 
-        browser: ShWebBrowser
+        eventReceiver: WebShServerEventReceiver, 
+        browser: WebShBrowser
     ) {
         this.eventReceiver = eventReceiver;
         this.port = 1024 + Math.floor((Math.random() * (65535 - 1024)) + 1);
@@ -25,10 +25,16 @@ export class ShWebServer {
         this.express.get("/", (request, response) => {
             response.send(process.pid);
         });
-        this.express.get("/click/:selector", function (request, response) {
+        this.express.post("/click/:selector", function (request, response) {
             console.log("/click/:selector");
             const selector = request.params.selector;
             browser.click(selector);
+            response.send("OK");
+        });
+        this.express.post("/enter-text/:selector", function (request, response) {
+            console.log("/click/:selector");
+            const selector = request.params.selector;
+            browser.enterText(selector, request.body);
             response.send("OK");
         });
         this.express.get("/get-html/:selector", function (request, response) {
@@ -38,13 +44,15 @@ export class ShWebServer {
             console.log(html);
             response.send(html);
         });
-        this.express.get("/close-session", (request, response) => {
+        this.express.post("/close-session", (request, response) => {
             this.eventReceiver.close();
             response.send("OK");
         });
-        this.express.get("/navigate-to/:b64url", (request, response) => {
+        this.express.post("/navigate-to/:b64url", (request, response) => {
+            console.log("/navigate-to/:b64url");
             const b64url = request.params.b64url;
             const url: string = Buffer.from(b64url, 'base64').toString();
+            console.log(url);
             browser.navigateTo(url);
             response.send("OK");
         });

@@ -1,8 +1,8 @@
 {
-  "name": "shweb",
+  "name": "websh",
   "version": "0.0.1",
   "description": "Control an interactive browser session using shell commands (For end-to-end tests written in bash)",
-  "main": "ts/shweb.ts",
+  "main": "ts/websh.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

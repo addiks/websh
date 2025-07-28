@@ -4,8 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import { spawn } from 'node:child_process';
 
-import { ShWebServer, ShWebServerEventReceiver } from './http-server'
-import { ShWebBrowser } from './browser'
+import { WebShServer, WebShServerEventReceiver } from './http-server'
+import { WebShBrowser } from './browser'
 
 function parentPidOf(pid: number): number|null {
     try {
@@ -21,7 +21,7 @@ function parentPidOf(pid: number): number|null {
 }
 
 function envFileFor(ppid: number): string {
-    return os.tmpdir() + "/addiks/shweb/" + ppid + ".env";
+    return os.tmpdir() + "/addiks/websh/" + ppid + ".env";
 }
 
 function findEnvFile(): string {
@@ -44,25 +44,25 @@ class DaemonServerUnreachable extends Error {
 }
 
 export class DaemonEnvFileAlreadyExists extends Error {
-    public readonly daemon: ShWebDaemon;
+    public readonly daemon: WebShDaemon;
     
-    constructor(daemon: ShWebDaemon) {
+    constructor(daemon: WebShDaemon) {
         super("An shweb session is already active!");
         this.daemon = daemon;
     }
 }
 
-class ShWebDaemon implements ShWebServerEventReceiver {
+class WebShDaemon implements WebShServerEventReceiver {
     public readonly envFile: string;
-    private webserver: ShWebServer;
-    private browser: ShWebBrowser;
+    private webserver: WebShServer;
+    private browser: WebShBrowser;
     private hadInteractionSinceLastLoop: boolean = false;
     private wasStopped: boolean = false;
 
     constructor (envFile: string) {
         this.envFile = envFile;
-        this.browser = new ShWebBrowser();
-        this.webserver = new ShWebServer(this, this.browser);
+        this.browser = new WebShBrowser();
+        this.webserver = new WebShServer(this, this.browser);
     }
     
     public writeEnvFile() {
@@ -113,8 +113,8 @@ class ShWebDaemon implements ShWebServerEventReceiver {
 }
 
 async function startNewDaemonProcess() {
-    const log = fs.openSync("/tmp/addiks/shweb.log", "a");
-    const daemon = spawn("node", [process.cwd() + "/build/shweb.js", "start-session", process.ppid.toString()], {
+    const log = fs.openSync("/tmp/addiks/websh.log", "a");
+    const daemon = spawn("node", [process.cwd() + "/build/websh.js", "start-session", process.ppid.toString()], {
         detached: true,
         stdio: ['ignore', log, log]
     });
@@ -126,11 +126,11 @@ export async function runDaemonFor(ppid: number) {
     let envFile: string = envFileFor(ppid);
     console.log("Starting new deamon at " + envFile);
     
-    const daemon = new ShWebDaemon(envFile);
+    const daemon = new WebShDaemon(envFile);
     await daemon.main();
 }
 
-class ShWebDaemonClient {
+class WebShDaemonClient {
     private port: number;
 
     constructor (envFile: string) {
@@ -144,65 +144,63 @@ class ShWebDaemonClient {
     }
     
     public async close() {
-        await fetch(this.baseUrl() + "/close-session");
+        await fetch(this.baseUrl() + "/close-session", {
+            method: 'POST'
+        });
     }
     
     public async navigateTo(url: string) {
-        console.log("Sending navigate command to daemon...");
         const b64url = Buffer.from(url, 'binary').toString('base64');
-        console.log(this.baseUrl() + "/navigate-to/" + b64url);
-        await fetch(this.baseUrl() + "/navigate-to/" + b64url);
-        console.log("NavTo finished");
+        await fetch(this.baseUrl() + "/navigate-to/" + b64url, {
+            method: 'POST'
+        });
+    }
+    
+    public async click(selector: string) {
+        const url = this.baseUrl() + "/click/" + selector;
+        await fetch(url, {
+            method: 'POST'
+        });
+    }
+    
+    public async enterText(selector: string, text: string) {
+        const url = this.baseUrl() + "/enter-text/" + selector;
+        await fetch(url, {
+            method: 'POST',
+            body: text
+        });
     }
     
     public async getHtml(selector: string): Promise<string> {
         const url = this.baseUrl() + "/get-html/" + selector;
-        console.log(url);
-        
-        return await this.streamToString((await fetch(url)).body);
+        return (await fetch(url)).text();
     }
     
     private baseUrl(): string {
         return "http://localhost:" + this.port;
     }
     
-    private streamToString (stream: any): Promise<string> {
-        const chunks: any[] = [];
-        return new Promise((resolve, reject) => {
-            stream.on('data', (chunk: any) => chunks.push(Buffer.from(chunk)));
-            stream.on('error', (err: any) => reject(err));
-            stream.on('end', () => resolve(Buffer.concat(chunks as any[]).toString('utf8')));
-        })
-    }
-    
 }
 
-export async function provideDaemonClient(): Promise<ShWebDaemonClient> {
+export async function provideDaemonClient(): Promise<WebShDaemonClient> {
     
     let envFile: string = findEnvFile();
     
     if (!fs.existsSync(envFile)) {
-        console.log("Creating new deamon for PPID " + process.ppid);
         await startNewDaemonProcess();
-        
-    } else {
-        console.log("Using existing deamon at " + envFile);
     }
     
     try {
-        const client = new ShWebDaemonClient(envFile);
+        const client = new WebShDaemonClient(envFile);
         await client.ping();
         return client;
         
     } catch (e: any) {
         console.log("blah");
         if (e instanceof TypeError && e.message == "fetch failed") {
-            console.log("Existing daemon is down. Restarting...");
             fs.unlinkSync(envFile);
-            console.log("blah1");
             await startNewDaemonProcess();
-            console.log("bla2");
-            return new ShWebDaemonClient(envFile);
+            return new WebShDaemonClient(envFile);
             
         } else {
             throw e;

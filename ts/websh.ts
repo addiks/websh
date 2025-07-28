@@ -36,6 +36,18 @@ const argv = yargs()
         await client.navigateTo(argv.url as string);
         // setTimeout(() => {why();}, 1000);
     })
+    .command('click <selector>', 'Click on element(s)', (yargs) => {
+    
+    }, async (argv) => {
+        const client = await provideDaemonClient();
+        client.click(argv.selector as string);
+    })
+    .command('enter-text <selector> <text>', 'Enter text into element(s)', (yargs) => {
+    
+    }, async (argv) => {
+        const client = await provideDaemonClient();
+        client.enterText(argv.selector as string, argv.text as string);
+    })
     .command('get-html <selector>', 'Get element(s) HTML', (yargs) => {
     
     }, async (argv) => {
@@ -50,5 +62,5 @@ const argv = yargs()
     })
     .strict()
     .help()
-    .demandCommand(1, 'shweb needs a command. Use --help for details.')
+    .demandCommand(1, 'websh needs a command. Use --help for details.')
     .parse(hideBin(process.argv));

@@ -1,20 +1,17 @@
 
 import { JSDOM } from 'jsdom';
 
-class ShWebTab {
-
-}
-
-export class ShWebBrowser {
-    private tabs: ShWebTab[] = [];
+export class WebShBrowser {
     private dom: JSDOM;
 
     constructor () {
         this.dom = new JSDOM(``, {});
     }
     
-    public navigateTo(url: string): void {
-        this.dom = new JSDOM(``, {
+    public async navigateTo(url: string) {
+        console.log("Opening '" + url + "' in browser.");
+        const html: string = await (await fetch(url)).text();
+        this.dom = new JSDOM(html, {
             url: url,
             // contentType: "text/html",
             includeNodeLocations: true,
@@ -24,15 +21,27 @@ export class ShWebBrowser {
     }
     
     public click(selector: string): void {
-        
+        for (const node of this.query(selector)) {
+            // node.click();
+        }
+    }
+    
+    public enterText(selector: string, text: string): void {
+        for (const node of this.query(selector)) {
+            node.setAttribute('value', text);
+        }
     }
     
     public getHtml(selector: string): string {
         let html = "";
-        for (const node of this.dom.window.document.querySelectorAll(selector)) {
+        for (const node of this.query(selector)) {
             html += node.outerHTML;
         }
         return html;
+    }
+    
+    private query(selector: string) {
+        return this.dom.window.document.querySelectorAll(selector);
     }
 
 }
