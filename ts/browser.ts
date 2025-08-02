@@ -3,9 +3,14 @@ import { JSDOM } from 'jsdom';
 
 export class WebShBrowser {
     private dom: JSDOM;
+    private runScriptsDangerously: boolean = false;
 
     constructor () {
         this.dom = new JSDOM(``, {});
+    }
+    
+    public activateRunScriptsDangerously(): void {
+        this.runScriptsDangerously = true;
     }
     
     public async navigateTo(url: string) {
@@ -16,7 +21,8 @@ export class WebShBrowser {
             // contentType: "text/html",
             includeNodeLocations: true,
             storageQuota: 10000000,
-            runScripts: "dangerously"
+            runScripts: this.runScriptsDangerously ? "dangerously" : undefined,
+            pretendToBeVisual: true
         });
     }
     

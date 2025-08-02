@@ -26,6 +26,9 @@ const argv = yargs()
     .command('close', 'Closes the current session (if any)', (yargs) => {}, (argv) => {
         provideDaemonClient().then((c) => c.close());
     })
+    .command('run-scripts-dangerously', 'Enables scripts (Only run trusted JS!)', (yargs) => {}, (argv) => {
+        provideDaemonClient().then((c) => c.activateRunScriptsDangerously());
+    })
     .command('navigate-to <url>', 'open given URL', (yargs) => {
         return yargs
             .positional('url', {

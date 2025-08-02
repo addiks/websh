@@ -25,6 +25,11 @@ export class WebShServer {
         this.express.get("/", (request, response) => {
             response.send(process.pid);
         });
+        this.express.post("/run-scripts-dangerously", function (request, response) {
+            console.log("/run-scripts-dangerously");
+            browser.activateRunScriptsDangerously();
+            response.send("OK");
+        });
         this.express.post("/click/:selector", function (request, response) {
             console.log("/click/:selector");
             const selector = request.params.selector;
